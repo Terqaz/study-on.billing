@@ -6,6 +6,10 @@ root /app/public;
 location / {
     # try to serve file directly, fallback to index.php
     try_files $uri /index.php$is_args$args;
+
+    proxy_buffer_size 128k;
+    proxy_buffers 4 256k;
+    proxy_busy_buffers_size 256k;
 }
 
 location ~ ^/index\.php(/|$) {
@@ -32,6 +36,10 @@ location ~ ^/index\.php(/|$) {
     # http://domain.tld/index.php/some-path
     # Remove the internal directive to allow URIs like this
     internal;
+
+    fastcgi_buffer_size 128k;
+    fastcgi_buffers 4 256k;
+    fastcgi_busy_buffers_size 256k;
 }
 
 # return 404 for all other php files not matching the front controller

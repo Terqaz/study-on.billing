@@ -14,6 +14,7 @@ services:
     links:
       - php
   postgres:
+    container_name: study-on_postgres_2
     ports:  #Нельзя использовать проброс портов на реальном проекте
       - "127.0.0.1:5432:5432"
     image: postgres:alpine
