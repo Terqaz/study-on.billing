@@ -64,7 +64,8 @@ class AuthController extends AbstractController
             $user,
             $user->getPassword()
         ));
-        $userRepository->add($user); //TODO почему-то не сохраняется
+
+        $userRepository->add($user, true);
 
         return $this->json([
             'token' => $JWTManager->create($user),

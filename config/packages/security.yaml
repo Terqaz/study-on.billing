@@ -14,9 +14,6 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
-        register:
-            pattern: ^/api/v.{1,8}/register
-            stateless: true
         login:
             pattern: ^/api/v.{1,8}/auth
             stateless: true

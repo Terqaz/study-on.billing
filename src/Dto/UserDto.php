@@ -3,18 +3,21 @@
 namespace App\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
+use OpenApi\Annotations as OA;
 
 class UserDto
 {
     /**
      * @Assert\NotBlank( message="Name is mandatory" )
      * @Assert\Email( message="Invalid email address" )
+     * @OA\Property (default="user@example.com")
      */
     public string $username;
 
     /**
      * @Assert\NotBlank( message="Password is mandatory" )
      * @Assert\Length( min=6, minMessage="Password must contain at least {{ limit }} characters" )
+     * @OA\Property (default="user_password")
      */
     public string $password;
 
