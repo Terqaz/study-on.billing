@@ -49,6 +49,13 @@ class AuthControllerTest extends AbstractTest
         ]);
         $this->assertResponseCode(400);
 
+        // Email занят
+        $client->jsonRequest('POST', '/api/v1/register', [
+            "username" => 'user@example.com',
+            "password" => $password
+        ]);
+        $this->assertResponseCode(409);
+
         // Все верно
         $client->jsonRequest('POST', '/api/v1/register', [
             "username" => $email,

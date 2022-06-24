@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Dto\UserDto;
 use App\Entity\User;
 use App\Repository\UserRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use JMS\Serializer\SerializerBuilder;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -65,11 +66,14 @@ class AuthController extends AbstractController
             $user->getPassword()
         ));
 
-        $userRepository->add($user, true);
-
-        return $this->json([
-            'token' => $JWTManager->create($user),
-        ]);
+        try {
+            $userRepository->add($user, true);
+            return $this->json([
+                'token' => $JWTManager->create($user),
+            ]);
+        } catch (UniqueConstraintViolationException $e) {
+            return $this->json(['error' => $e->getMessage()], 409);
+        }
     }
 
     /**
