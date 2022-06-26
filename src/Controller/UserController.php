@@ -34,17 +34,15 @@ class UserController extends AbstractController
      *          response=200,
      *          description="The user data",
      *          @OA\JsonContent(
-     *              @OA\Schema(
-     *                  schema="CurrentUser",
-     *                  type="object",
-     *                  @OA\Property(property="username", type="string"),
-     *                  @OA\Property(
-     *                      property="roles",
-     *                      type="array",
-     *                      @OA\Items(type="string")
-     *                  ),
-     *                  @OA\Property(property="balance", type="float")
-     *              )
+     *              schema="CurrentUser",
+     *              type="object",
+     *              @OA\Property(property="username", type="string"),
+     *              @OA\Property(
+     *                  property="roles",
+     *                  type="array",
+     *                  @OA\Items(type="string")
+     *              ),
+     *              @OA\Property(property="balance", type="float")
      *          )
      *     )
      * )
