@@ -2,29 +2,16 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
-use App\Repository\UserRepository;
+use App\Service\UserService;
 use Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTDecodeFailureException;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
-use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
+use OpenApi\Annotations as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use OpenApi\Annotations as OA;
 
 class UserController extends AbstractController
 {
-    private JWTTokenManagerInterface $jwtManager;
-    private TokenStorageInterface $tokenStorageInterface;
-
-    public function __construct(TokenStorageInterface $tokenStorageInterface, JWTTokenManagerInterface $jwtManager)
-    {
-        $this->jwtManager = $jwtManager;
-        $this->tokenStorageInterface = $tokenStorageInterface;
-    }
-
     /**
      * @Route("/api/v1/users/current", name="app_user", methods={"GET"})
      * @OA\Get(
@@ -49,18 +36,13 @@ class UserController extends AbstractController
      * @Security(name="Bearer")
      * @throws JWTDecodeFailureException
      */
-    public function getCurrent(UserRepository $userRepository): JsonResponse
+    public function getCurrent(UserService $userService): JsonResponse
     {
-        $decodedJwtToken = $this->jwtManager->decode($this->tokenStorageInterface->getToken());
-
-        /** @var User $user */
-        $user = $userRepository->findOneBy([
-            'email' => $decodedJwtToken['username']
-        ]);
+        $user = $userService->getFromStorage();
 
         return $this->json([
-            'username' => $decodedJwtToken['username'],
-            'roles' => $decodedJwtToken['roles'],
+            'username' => $user->getEmail(),
+            'roles' => $user->getRoles(),
             'balance' => $user->getBalance(),
         ]);
     }

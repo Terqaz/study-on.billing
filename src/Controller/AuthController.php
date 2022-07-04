@@ -8,21 +8,17 @@ use App\Repository\UserRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Exception;
 use Gesdinet\JWTRefreshTokenBundle\Generator\RefreshTokenGeneratorInterface;
-use Gesdinet\JWTRefreshTokenBundle\Model\RefreshTokenManagerInterface;
-use Gesdinet\JWTRefreshTokenBundle\Service\RefreshToken;
 use JMS\Serializer\SerializerBuilder;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
-use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use OpenApi\Annotations as OA;
 
 class AuthController extends AbstractController
 {
@@ -41,6 +37,15 @@ class AuthController extends AbstractController
      *              type="object",
      *              @OA\Property(property="token", type="string"),
      *              @OA\Property(property="refresh_token", type="string")
+     *          )
+     *     ),
+     *     @OA\Response(
+     *          response=409,
+     *          description="User already exists",
+     *          @OA\JsonContent(
+     *              schema="Error",
+     *              type="object",
+     *              @OA\Property(property="error", type="string")
      *          )
      *     )
      * )

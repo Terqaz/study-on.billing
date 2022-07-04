@@ -44,6 +44,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     private float $balance = 0.0;
 
+    /**
+     * @ORM\OneToMany(targetEntity=Transaction::class, mappedBy="userData")
+     */
+    private $transactions;
+
+    public function __construct()
+    {
+        $this->transactions = new ArrayCollection();
+    }
+
     public static function fromDto(UserDto $userDto): User
     {
         return (new self())
@@ -148,6 +158,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setBalance(float $balance): self
     {
         $this->balance = $balance;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Transaction>
+     */
+    public function getTransactions(): Collection
+    {
+        return $this->transactions;
+    }
+
+    public function addTransaction(Transaction $transaction): self
+    {
+        if (!$this->transactions->contains($transaction)) {
+            $this->transactions[] = $transaction;
+            $transaction->setUserData($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTransaction(Transaction $transaction): self
+    {
+        if ($this->transactions->removeElement($transaction)) {
+            // set the owning side to null (unless already changed)
+            if ($transaction->getUserData() === $this) {
+                $transaction->setUserData(null);
+            }
+        }
 
         return $this;
     }

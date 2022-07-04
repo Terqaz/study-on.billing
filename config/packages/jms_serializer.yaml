@@ -1,7 +1,17 @@
 jms_serializer:
+    handlers:
+        datetime:
+            default_format: "Y-m-d\\TH:i:sP" # ATOM # todo почему-то не работает
+            default_timezone: "UTC"
+
     visitors:
         xml_serialization:
             format_output: '%kernel.debug%'
+
+    property_naming:
+        separator: _
+        lower_case: true
+
 #    metadata:
 #        auto_detection: false
 #        directories:
