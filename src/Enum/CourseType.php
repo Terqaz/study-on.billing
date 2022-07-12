@@ -8,9 +8,15 @@ class CourseType
     public const RENT = 1;
     public const BUY = 2;
 
-    public const TYPE_NAMES = [
+    public const NAMES = [
         self::FREE => 'free',
         self::RENT => 'rent',
         self::BUY => 'buy',
+    ];
+
+    public const VALUES = [
+        'free' => self::FREE,
+        'rent' => self::RENT,
+        'buy' => self::BUY,
     ];
 }

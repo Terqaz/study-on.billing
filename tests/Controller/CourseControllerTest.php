@@ -2,12 +2,15 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\Course;
 use App\Entity\Transaction;
 use App\Entity\User;
+use App\Enum\CourseType;
 use App\Tests\AbstractTest;
 use DateInterval;
 use DateTime;
 use DateTimeInterface;
+use Symfony\Component\BrowserKit\AbstractBrowser;
 
 class CourseControllerTest extends AbstractTest
 {
@@ -35,6 +38,130 @@ class CourseControllerTest extends AbstractTest
         self::assertEquals('interactive-sql-trainer', $course['code']);
         self::assertEquals('free', $course['type']);
         self::assertArrayNotHasKey('price', $course);
+    }
+
+    public function testAddCourse(): void
+    {
+        $client = static::getClient();
+        $this->login($client, self::ADMIN_EMAIL, self::ADMIN_PASSWORD);
+
+        $response = $this->subtestAddCourse($client, 200, [
+            "code" => "new-course-1",
+            "name" => "Новый курс",
+            "type" => CourseType::NAMES[CourseType::FREE]
+        ]);
+        self::assertTrue($response['success']);
+        $response = $this->subtestAddCourse($client, 200, [
+            "code" => "new-course-2",
+            "name" => "Новый курс",
+            "type" => CourseType::NAMES[CourseType::RENT],
+            "price" => "200"
+        ]);
+        self::assertTrue($response['success']);
+        $response = $this->subtestAddCourse($client, 200, [
+            "code" => "new-course-3",
+            "name" => "Новый курс",
+            "type" => CourseType::NAMES[CourseType::BUY],
+            "price" => "300.32"
+        ]);
+        self::assertTrue($response['success']);
+
+        $courseRepository = self::getEntityManager()->getRepository(Course::class);
+        self::assertEquals(3, $courseRepository->count(['name' => 'Новый курс']));
+    }
+
+    public function testAddCourseFailed(): void
+    {
+        $client = static::getClient();
+
+        // Без прав админа нет доступа
+        $client->request('POST', '/api/v1/courses');
+        $this->assertResponseCode(401);
+
+        $this->login($client, self::EMAIL, self::PASSWORD);
+        $client->request('POST', '/api/v1/courses');
+        $this->assertResponseCode(403);
+
+        $this->login($client, self::ADMIN_EMAIL, self::ADMIN_PASSWORD);
+
+        // Нет кода
+        $response = $this->subtestAddCourse($client, 400, [
+            "name" => "Новый курс",
+            "type" => CourseType::NAMES[CourseType::RENT],
+            "price" => "200"
+        ]);
+        // Нет имени
+        $response = $this->subtestAddCourse($client, 400, [
+            "code" => "new-course-1",
+            "type" => CourseType::NAMES[CourseType::RENT],
+            "price" => "200"
+        ]);
+        // Нет типа
+        $response = $this->subtestAddCourse($client, 400, [
+            "code" => "new-course-1",
+            "name" => "Новый курс",
+            "price" => "200"
+        ]);
+        // Неверный тип
+        $response = $this->subtestAddCourse($client, 400, [
+            "code" => "new-course-1",
+            "name" => "Новый курс",
+            "type" => "sdgdg",
+            "price" => "200"
+        ]);
+        // Нет цены
+        $this->subtestAddCourse($client, 400, [
+            "code" => "new-course-1",
+            "name" => "Новый курс",
+            "type" => CourseType::NAMES[CourseType::RENT],
+        ]);
+        $this->subtestAddCourse($client, 400, [
+            "code" => "new-course-1",
+            "name" => "Новый курс",
+            "type" => CourseType::NAMES[CourseType::BUY],
+        ]);
+        // Курс с таким кодом уже существует
+        $this->subtestAddCourse($client, 409, [
+            "code" => "python-programming",
+            "name" => "Новый курс",
+            "type" => "buy",
+            "price" => "400"
+        ]);
+    }
+
+    private function subtestAddCourse(AbstractBrowser $client, $responseCode, $requestBody)
+    {
+        $client->request(
+            'POST',
+            '/api/v1/courses',
+            [],
+            [],
+            [],
+            json_encode($requestBody, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)
+        );
+        $this->assertResponseCode($responseCode);
+        return self::parseJsonResponse($client);
+    }
+
+    public function testEditCourse(): void
+    {
+        $client = static::getClient();
+        $this->login($client, self::ADMIN_EMAIL, self::ADMIN_PASSWORD);
+    }
+
+    public function testEditCourseFailed(): void
+    {
+        $client = static::getClient();
+
+        // Без прав админа нет доступа
+        $client->request('POST', '/api/v1/courses/interactive-sql-trainer');
+        $this->assertResponseCode(401);
+
+        $this->login($client, self::EMAIL, self::PASSWORD);
+        $client->request('POST', '/api/v1/courses/interactive-sql-trainer');
+        $this->assertResponseCode(403);
+
+        $this->login($client, self::ADMIN_EMAIL, self::ADMIN_PASSWORD);
     }
 
     public function testPayCourse(): void

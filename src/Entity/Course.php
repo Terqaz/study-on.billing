@@ -2,12 +2,12 @@
 
 namespace App\Entity;
 
+use App\Dto\CourseDto;
+use App\Enum\CourseType;
 use App\Repository\CourseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use JMS\Serializer\Annotation as Serializer;
-use OpenApi\Annotations as OA;
 
 /**
  * @ORM\Entity(repositoryClass=CourseRepository::class)
@@ -23,22 +23,23 @@ class Course
 
     /**
      * @ORM\Column(type="string", length=255, unique=true)
-     * @Serializer\Groups({"info"})
      */
     private $code;
 
     /**
+     * @ORM\Column(type="string", length=255)
+     */
+    private $name;
+
+    /**
      * @ORM\Column(type="smallint")
-     * @Serializer\Groups({"info"})
-     * @OA\Property(type="string", enum={"free", "rent", "buy"})
      */
     private $type;
 
     /**
-     * @ORM\Column(type="float", nullable=true)
-     * @Serializer\Groups({"info"})
+     * @ORM\Column(type="float", nullable=true, options={"default": 0.0})
      */
-    private $price;
+    private $price = 0.0;
 
     /**
      * @ORM\OneToMany(targetEntity=Transaction::class, mappedBy="course")
@@ -48,6 +49,15 @@ class Course
     public function __construct()
     {
         $this->transactions = new ArrayCollection();
+    }
+
+    public static function fromDto(CourseDto $dto): Course
+    {
+        return (new self())
+            ->setName($dto->getName())
+            ->setCode($dto->getCode())
+            ->setPrice($dto->getPrice())
+            ->setType(CourseType::VALUES[$dto->getType()]);
     }
 
     public function getId(): ?int
@@ -117,6 +127,18 @@ class Course
                 $transaction->setCourse(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): self
+    {
+        $this->name = $name;
 
         return $this;
     }

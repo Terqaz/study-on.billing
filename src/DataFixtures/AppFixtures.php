@@ -70,6 +70,7 @@ class AppFixtures extends Fixture
         foreach (self::COURSES_DATA as $courseData) {
             $course = (new Course())
                 ->setCode($courseData['code'])
+                ->setName($courseData['name'])
                 ->setType($courseData['type']);
             if (isset($courseData['price'])) {
                 $course->setPrice($courseData['price']);
@@ -84,13 +85,16 @@ class AppFixtures extends Fixture
     private const COURSES_DATA = [
         [
             'code' => 'interactive-sql-trainer',
+            'name' => 'Интерактивный тренажер по SQL',
             'type' => 0 // free
         ], [
             'code' => 'python-programming',
+            'name' => 'Программирование на Python',
             'type' => 1, // rent
             'price' => 10
         ], [
             'code' => 'building-information-modeling',
+            'name' => 'Информационное моделирование зданий',
             'type' => 2, // buy
             'price' => 20
         ]

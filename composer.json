@@ -16,6 +16,7 @@
         "jms/serializer-bundle": "^4.0",
         "lexik/jwt-authentication-bundle": "^2.15",
         "nelmio/api-doc-bundle": "^4.9",
+        "sensio/framework-extra-bundle": "^6.2",
         "squizlabs/php_codesniffer": "^3.6",
         "symfony/asset": "5.4.*",
         "symfony/console": "5.4.*",

@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Dto\CourseDto;
 use App\Entity\Course;
 use App\Enum\CourseType;
 use App\Exception\CourseAlreadyPaidException;
@@ -10,15 +11,26 @@ use App\Repository\CourseRepository;
 use App\Service\PaymentService;
 use App\Service\UserService;
 use DateTimeInterface;
+use JMS\Serializer\SerializerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class CourseController extends AbstractController
 {
+    private SerializerInterface $serializer;
+
+    public function __construct(SerializerInterface $serializer)
+    {
+        $this->serializer = $serializer;
+    }
+
     /**
      * @Route("/api/v1/courses", name="app_course_index", methods={"GET"})
      * @OA\Get(
@@ -30,7 +42,7 @@ class CourseController extends AbstractController
      *          @OA\JsonContent(
      *              schema="CoursesInfo",
      *              type="array",
-     *              @OA\Items(ref=@Model(type=Course::class, groups={"info"}))
+     *              @OA\Items(ref=@Model(type=CourseDto::class, groups={"info"}))
      *          )
      *     )
      * )
@@ -55,7 +67,7 @@ class CourseController extends AbstractController
      *          response=200,
      *          description="The course data",
      *          @OA\JsonContent(
-     *              ref=@Model(type=Course::class, groups={"info"})
+     *              ref=@Model(type=CourseDto::class, groups={"info"})
      *          )
      *     ),
      *     @OA\Response(
@@ -83,9 +95,112 @@ class CourseController extends AbstractController
         if ($course['type'] === CourseType::FREE) {
             unset($course['price']);
         }
-        $course['type'] = CourseType::TYPE_NAMES[$course['type']];
+        $course['type'] = CourseType::NAMES[$course['type']];
 
         return $course;
+    }
+
+    /**
+     * @Route("/api/v1/courses", name="app_course_new", methods={"POST"})
+     * @OA\Post(
+     *     description="Create a new course",
+     *     tags={"course"},
+     *     @OA\RequestBody(
+     *          required=true,
+     *          @Model(type=Course::class, groups={"new_edit"})
+     *     ),
+     *     @OA\Response(
+     *          response=200,
+     *          description="Success",
+     *          @OA\JsonContent(
+     *              type="object",
+     *              @OA\Property(property="success", type="bool")
+     *          )
+     *     ),
+     *     @OA\Response(
+     *          response=409,
+     *          description="Course already exists",
+     *          @OA\JsonContent(
+     *              type="object",
+     *              @OA\Property(property="error", type="string")
+     *          )
+     *     )
+     * )
+     * @IsGranted("ROLE_SUPER_ADMIN")
+     * @Security(name="Bearer")
+     */
+    public function new(
+        Request            $request,
+        CourseRepository   $courseRepository,
+        ValidatorInterface $validator
+    ): JsonResponse {
+        $newCourse = $this->serializer->deserialize($request->getContent(), CourseDto::class, 'json');
+        $errors = $validator->validate($newCourse, null, ['new_edit']);
+        if (count($errors) > 0) {
+            return $this->json(['errors' => (string) $errors], 400);
+        }
+
+        if ($courseRepository->count(['code' => $newCourse->getCode()]) > 0) {
+            return $this->json(['error' => 'Course already exists'], 409);
+        }
+
+        $courseRepository->add(Course::fromDto($newCourse), true);
+        return $this->json(['success' => true]);
+    }
+
+    /**
+     * @Route("/api/v1/courses/{code}", name="app_course_edit", methods={"POST"})
+     * @OA\Post(
+     *     description="Edit course by code",
+     *     tags={"course"},
+     *     @OA\RequestBody(
+     *          required=true,
+     *          @Model(type=CourseDto::class, groups={"new_edit"})
+     *     ),
+     *     @OA\Response(
+     *          response=200,
+     *          description="Success",
+     *          @OA\JsonContent(
+     *              type="object",
+     *              @OA\Property(property="success", type="bool")
+     *          )
+     *     ),
+     *     @OA\Response(
+     *          response=409,
+     *          description="Course with new code already exists",
+     *          @OA\JsonContent(
+     *              type="object",
+     *              @OA\Property(property="error", type="string")
+     *          )
+     *     )
+     * )
+     * @IsGranted("ROLE_SUPER_ADMIN")
+     * @Security(name="Bearer")
+     */
+    public function edit(
+        string             $code,
+        Request            $request,
+        CourseRepository   $courseRepository,
+        ValidatorInterface $validator
+    ): JsonResponse {
+        $course = $courseRepository->findOneBy(['code' => $code]);
+        if (!$course) {
+            return $this->json(['error' => 'Course not found'], 404);
+        }
+
+        $newCourse = $this->serializer->deserialize($request->getContent(), CourseDto::class, 'json');
+
+        $errors = $validator->validate($newCourse, null, ['new_edit']);
+        if (count($errors) > 0) {
+            return $this->json(['errors' => (string) $errors], 400);
+        }
+        if ($courseRepository->count(['code' => $newCourse->getCode()]) > 0) {
+            return $this->json(['error' => 'Course already exists'], 409);
+        }
+
+        $courseRepository->add(Course::fromDto($newCourse), true);
+
+        return $this->json(['success' => true]);
     }
 
     /**
@@ -137,7 +252,7 @@ class CourseController extends AbstractController
 
             $body = [
                 'success' => true,
-                'course_type' => CourseType::TYPE_NAMES[$course->getType()],
+                'course_type' => CourseType::NAMES[$course->getType()],
             ];
 
             // Оплата не нужна
