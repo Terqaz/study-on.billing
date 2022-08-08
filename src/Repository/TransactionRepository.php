@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Transaction;
 use App\Enum\CourseType;
 use DateTime;
+use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\NonUniqueResultException;
@@ -125,5 +126,26 @@ class TransactionRepository extends ServiceEntityRepository
         return $qb
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    public function findPeriodTotalPaid(DateTimeImmutable $from, DateTimeImmutable $to)
+    {
+        return $this->createQueryBuilder('t')
+            ->select(
+                'u.email AS email',
+                'c.name AS name',
+                'c.type AS type',
+                'COUNT(t.id) AS transactions_count',
+                'SUM(t.amount) AS course_amount'
+            )
+            ->innerJoin('t.course', 'c')
+            ->innerJoin('t.userData', 'u')
+            ->where('t.createdAt >= :from')
+            ->setParameter('from', $from, Types::DATETIME_IMMUTABLE)
+            ->andWhere('t.createdAt <= :to')
+            ->setParameter('to', $to, Types::DATETIME_IMMUTABLE)
+            ->groupBy('email', 'c.id', 'name', 'type')
+            ->getQuery()
+            ->getArrayResult();
     }
 }

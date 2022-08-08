@@ -24,15 +24,23 @@ class AppFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
-        $user = (new User())
+        $user1 = (new User())
             ->setEmail('user@example.com')
-            ->setRoles(['ROLE_USER'])
-        ;
-        $user->setPassword($this->passwordHasher->hashPassword(
-            $user,
+            ->setRoles(['ROLE_USER']);
+        $user1->setPassword($this->passwordHasher->hashPassword(
+            $user1,
             'user_password'
         ));
-        $manager->persist($user);
+        $manager->persist($user1);
+
+        $user2 = (new User())
+            ->setEmail('user2@example.com')
+            ->setRoles(['ROLE_USER']);
+        $user2->setPassword($this->passwordHasher->hashPassword(
+            $user2,
+            'user_password'
+        ));
+        $manager->persist($user2);
 
         $admin = (new User())
             ->setEmail('admin@example.com')
@@ -47,14 +55,23 @@ class AppFixtures extends Fixture
 
         $coursesByCode = $this->createCourses($manager);
 
-        $this->paymentService->deposit($user, 99.24);
-        $this->paymentService->deposit($user, 910.76);
-        $transaction = $this->paymentService->pay($user, $coursesByCode['python-programming']);
+        $this->paymentService->deposit($user1, 99.24);
+        $this->paymentService->deposit($user1, 910.76);
 
+        $transaction = $this->paymentService->pay($user1, $coursesByCode['python-programming']);
         $transaction->setCreatedAt((new DateTime())->sub(new DateInterval('P2D')));
         $transaction->setExpiresAt((new DateTime())->sub(new DateInterval('P1D')));
 
+        $transaction = $this->paymentService->pay($user1, $coursesByCode['building-information-modeling']);
+
+        $transaction = $this->paymentService->pay($user1, $coursesByCode['python-programming']);
+        $transaction->setExpiresAt((new DateTime())->add(new DateInterval('PT23H')));
+
         $manager->persist($transaction);
+
+        $this->paymentService->deposit($user2, 1000);
+        $transaction = $this->paymentService->pay($user2, $coursesByCode['building-information-modeling']);
+        $transaction = $this->paymentService->pay($user2, $coursesByCode['python-programming']);
 
         $manager->flush();
     }
@@ -97,6 +114,11 @@ class AppFixtures extends Fixture
             'name' => 'Информационное моделирование зданий',
             'type' => 2, // buy
             'price' => 20
+        ], [
+            'code' => 'some-course',
+            'name' => 'Покупаемый в тестах курс',
+            'type' => 1, // rent
+            'price' => 1
         ]
     ];
 

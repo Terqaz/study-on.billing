@@ -3,11 +3,15 @@
 namespace App\Repository;
 
 use App\Entity\Course;
+use DateInterval;
+use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
 use Doctrine\Persistence\ManagerRegistry;
+use Exception;
 
 /**
  * @extends ServiceEntityRepository<Course>
@@ -62,5 +66,23 @@ class CourseRepository extends ServiceEntityRepository
         } catch (NoResultException|NonUniqueResultException $e) {
             return null;
         }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function findExpireInForUsers(string $period): array
+    {
+        $now = new DateTimeImmutable();
+        return $this->createQueryBuilder('c')
+            ->select('u.email AS email', 'c.name AS name', 't.expiresAt AS expires_at')
+            ->innerJoin('c.transactions', 't')
+            ->innerJoin('t.userData', 'u')
+            ->where('t.expiresAt >= :now')
+                ->setParameter('now', $now, Types::DATETIME_IMMUTABLE)
+            ->andWhere('t.expiresAt <= :last_time')
+                ->setParameter('last_time', $now->add(new DateInterval($period)), Types::DATETIME_IMMUTABLE)
+            ->getQuery()
+            ->getArrayResult();
     }
 }

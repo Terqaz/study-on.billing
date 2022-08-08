@@ -18,34 +18,34 @@ class TransactionControllerTest extends AbstractTest
 
         $this->login($client, self::EMAIL, self::PASSWORD);
 
-        $this->subtestGetTransactions($client, 3, []);
+        $this->subtestGetTransactions($client, 5, []);
         $this->subtestGetTransactions($client, 2, [
             'filter' => [
                 'type' => 'deposit'
             ]
         ]);
-        $this->subtestGetTransactions($client, 1, [
+        $this->subtestGetTransactions($client, 3, [
             'filter' => [
                 'type' => 'payment'
             ]
         ]);
-        $this->subtestGetTransactions($client, 1, [
+        $this->subtestGetTransactions($client, 3, [
             'filter' => [
                 'type' => 'payment',
                 'skip_expired' => false
             ]
         ]);
-        $this->subtestGetTransactions($client, 0, [
+        $this->subtestGetTransactions($client, 2, [
             'filter' => [
                 'type' => 'payment',
                 'skip_expired' => true
             ]
         ]);
 
-        $client->request('POST', '/api/v1/courses/python-programming/pay');
+        $client->request('POST', '/api/v1/courses/some-course/pay');
         $this->assertResponseCode(200);
 
-        $this->subtestGetTransactions($client, 1, [
+        $this->subtestGetTransactions($client, 3, [
             'filter' => [
                 'type' => 'payment',
                 'skip_expired' => true
@@ -55,13 +55,13 @@ class TransactionControllerTest extends AbstractTest
             'filter' => [
                 'type' => 'payment',
                 'skip_expired' => true,
-                'course_code' => 'python-programming'
+                'course_code' => 'some-course'
             ]
         ]);
-        $this->subtestGetTransactions($client, 2, [
+        $this->subtestGetTransactions($client, 1, [
             'filter' => [
                 'type' => 'payment',
-                'course_code' => 'python-programming'
+                'course_code' => 'some-course'
             ]
         ]);
         $this->subtestGetTransactions($client, 0, [

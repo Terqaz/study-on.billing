@@ -1,0 +1,11 @@
+{% extends 'email.html.twig' %}
+
+{% block title %}
+    <p>Уважаемый клиент! У вас есть курсы, срок аренды которых подходит к концу:</p>
+{% endblock %}
+
+{% block body %}
+    {% for course in courses %}
+        <p> "{{ course['name'] }}" действует до {{ course['expires_at']|date('d.m.Y H:i') }}</p>
+    {% endfor %}
+{% endblock %}

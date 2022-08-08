@@ -23,7 +23,7 @@ class CourseControllerTest extends AbstractTest
 
         $courses = self::parseJsonResponse($client);
 
-        self::assertCount(3, $courses);
+        self::assertCount(4, $courses);
     }
 
     public function testGetCourse(): void
@@ -45,24 +45,24 @@ class CourseControllerTest extends AbstractTest
         $client = static::getClient();
         $this->login($client, self::ADMIN_EMAIL, self::ADMIN_PASSWORD);
 
-        $response = $this->subtestAddCourse($client, 200, [
+        $response = $this->subtestPost($client, '/api/v1/courses', 200, [
             "code" => "new-course-1",
             "name" => "Новый курс",
             "type" => CourseType::NAMES[CourseType::FREE]
         ]);
         self::assertTrue($response['success']);
-        $response = $this->subtestAddCourse($client, 200, [
+        $response = $this->subtestPost($client, '/api/v1/courses', 200, [
             "code" => "new-course-2",
             "name" => "Новый курс",
             "type" => CourseType::NAMES[CourseType::RENT],
-            "price" => "200"
+            "price" => 200
         ]);
         self::assertTrue($response['success']);
-        $response = $this->subtestAddCourse($client, 200, [
+        $response = $this->subtestPost($client, '/api/v1/courses', 200, [
             "code" => "new-course-3",
             "name" => "Новый курс",
             "type" => CourseType::NAMES[CourseType::BUY],
-            "price" => "300.32"
+            "price" => 300.32
         ]);
         self::assertTrue($response['success']);
 
@@ -85,43 +85,43 @@ class CourseControllerTest extends AbstractTest
         $this->login($client, self::ADMIN_EMAIL, self::ADMIN_PASSWORD);
 
         // Нет кода
-        $response = $this->subtestAddCourse($client, 400, [
+        $this->subtestPost($client, '/api/v1/courses', 400, [
             "name" => "Новый курс",
             "type" => CourseType::NAMES[CourseType::RENT],
             "price" => "200"
         ]);
         // Нет имени
-        $response = $this->subtestAddCourse($client, 400, [
+        $this->subtestPost($client, '/api/v1/courses', 400, [
             "code" => "new-course-1",
             "type" => CourseType::NAMES[CourseType::RENT],
             "price" => "200"
         ]);
         // Нет типа
-        $response = $this->subtestAddCourse($client, 400, [
+        $this->subtestPost($client, '/api/v1/courses', 400, [
             "code" => "new-course-1",
             "name" => "Новый курс",
             "price" => "200"
         ]);
         // Неверный тип
-        $response = $this->subtestAddCourse($client, 400, [
+        $this->subtestPost($client, '/api/v1/courses', 400, [
             "code" => "new-course-1",
             "name" => "Новый курс",
             "type" => "sdgdg",
             "price" => "200"
         ]);
         // Нет цены
-        $this->subtestAddCourse($client, 400, [
+        $this->subtestPost($client, '/api/v1/courses', 400, [
             "code" => "new-course-1",
             "name" => "Новый курс",
             "type" => CourseType::NAMES[CourseType::RENT],
         ]);
-        $this->subtestAddCourse($client, 400, [
+        $this->subtestPost($client, '/api/v1/courses', 400, [
             "code" => "new-course-1",
             "name" => "Новый курс",
             "type" => CourseType::NAMES[CourseType::BUY],
         ]);
         // Курс с таким кодом уже существует
-        $this->subtestAddCourse($client, 409, [
+        $this->subtestPost($client, '/api/v1/courses', 409, [
             "code" => "python-programming",
             "name" => "Новый курс",
             "type" => "buy",
@@ -129,24 +129,30 @@ class CourseControllerTest extends AbstractTest
         ]);
     }
 
-    private function subtestAddCourse(AbstractBrowser $client, $responseCode, $requestBody)
-    {
-        $client->request(
-            'POST',
-            '/api/v1/courses',
-            [],
-            [],
-            [],
-            json_encode($requestBody, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)
-        );
-        $this->assertResponseCode($responseCode);
-        return self::parseJsonResponse($client);
-    }
-
     public function testEditCourse(): void
     {
         $client = static::getClient();
         $this->login($client, self::ADMIN_EMAIL, self::ADMIN_PASSWORD);
+
+        $response = $this->subtestPost($client, '/api/v1/courses/interactive-sql-trainer', 200, [
+            "code" => "updated-course-1",
+            "name" => "курс",
+            "type" => CourseType::BUY_NAME,
+            "price" => 300.32
+        ]);
+        self::assertTrue($response['success']);
+
+        $client->request('GET', '/api/v1/courses/interactive-sql-trainer');
+        $this->assertResponseNotFound();
+
+        $client->request('GET', '/api/v1/courses/updated-course-1');
+        $this->assertResponseOk();
+
+        $course = self::parseJsonResponse($client);
+
+        self::assertSame('updated-course-1', $course['code']);
+        self::assertSame(CourseType::BUY_NAME, $course['type']);
+        self::assertSame(300.32, $course['price']);
     }
 
     public function testEditCourseFailed(): void
@@ -162,6 +168,17 @@ class CourseControllerTest extends AbstractTest
         $this->assertResponseCode(403);
 
         $this->login($client, self::ADMIN_EMAIL, self::ADMIN_PASSWORD);
+
+        $this->subtestPost($client, '/api/v1/courses/asfagsfsg', 404);
+    }
+
+    private function subtestPost(AbstractBrowser $client, $uri, $responseCode, $requestBody = [])
+    {
+        $requestBody = json_encode($requestBody, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+
+        $client->request('POST', $uri, [], [], [], $requestBody);
+        $this->assertResponseCode($responseCode);
+        return self::parseJsonResponse($client);
     }
 
     public function testPayCourse(): void
@@ -186,7 +203,7 @@ class CourseControllerTest extends AbstractTest
         $this->assertResponseCode(404);
 
         // Успешная оплата курса
-        $client->request('POST', '/api/v1/courses/python-programming/pay');
+        $client->request('POST', '/api/v1/courses/some-course/pay');
         $this->assertResponseCode(200);
 
         $payInfo = self::parseJsonResponse($client);
@@ -202,14 +219,6 @@ class CourseControllerTest extends AbstractTest
         // Курс уже арендован
         $client->request('POST', '/api/v1/courses/python-programming/pay');
         $this->assertResponseCode(409);
-
-        // Успешная оплата курса
-        $client->request('POST', '/api/v1/courses/building-information-modeling/pay');
-        $this->assertResponseCode(200);
-
-        $payInfo = self::parseJsonResponse($client);
-        self::assertTrue($payInfo['success']);
-        self::assertEquals('buy', $payInfo['course_type']);
 
         // Курс уже куплен
         $client->request('POST', '/api/v1/courses/building-information-modeling/pay');
@@ -235,14 +244,14 @@ class CourseControllerTest extends AbstractTest
         self::assertTrue($payInfo['success']);
         self::assertEquals('free', $payInfo['course_type']);
 
-        // Проверка снятия средств за покупку 2-х курсов
+        // Проверка снятия средств за покупку курса
         $user = $userRepository->findOneBy(['email' => self::EMAIL]);
         self::assertEquals(
-            abs(round(1000.0 - 10.0 - 20.0, 2)),
+            abs(round(1000.0 - (10.0 + 20.0) - 1.0, 2)),
             $user->getBalance()
         );
 
-        // Добавилось 2 транзакции
-        self::assertEquals($transactionsCount + 2, $transactionRepository->count(['type' => 0]));
+        // Добавилась 1 транзакция
+        self::assertEquals($transactionsCount + 1, $transactionRepository->count(['type' => 0]));
     }
 }

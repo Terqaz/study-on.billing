@@ -107,7 +107,7 @@ class CourseController extends AbstractController
      *     tags={"course"},
      *     @OA\RequestBody(
      *          required=true,
-     *          @Model(type=Course::class, groups={"new_edit"})
+     *          @Model(type=CourseDto::class, groups={"new_edit"})
      *     ),
      *     @OA\Response(
      *          response=200,
@@ -135,13 +135,16 @@ class CourseController extends AbstractController
         ValidatorInterface $validator
     ): JsonResponse {
         $newCourse = $this->serializer->deserialize($request->getContent(), CourseDto::class, 'json');
+
         $errors = $validator->validate($newCourse, null, ['new_edit']);
         if (count($errors) > 0) {
-            return $this->json(['errors' => (string) $errors], 400);
+            return $this->json(['error' => (string)$errors], 400);
         }
-
+        if (!$this->isPricePresented($newCourse)) {
+            return $this->json(['error' => ['Price must be submitted for a paid course']], 400);
+        }
         if ($courseRepository->count(['code' => $newCourse->getCode()]) > 0) {
-            return $this->json(['error' => 'Course already exists'], 409);
+            return $this->json(['error' => ['Course already exists']], 409);
         }
 
         $courseRepository->add(Course::fromDto($newCourse), true);
@@ -192,15 +195,33 @@ class CourseController extends AbstractController
 
         $errors = $validator->validate($newCourse, null, ['new_edit']);
         if (count($errors) > 0) {
-            return $this->json(['errors' => (string) $errors], 400);
+            return $this->json(['error' => (string)$errors], 400);
         }
-        if ($courseRepository->count(['code' => $newCourse->getCode()]) > 0) {
+        if (!$this->isPricePresented($newCourse)) {
+            return $this->json(['error' => 'Для платного курса должна быть указана цена'], 400);
+        }
+        if ($code !== $newCourse->getCode() && $courseRepository->count(['code' => $newCourse->getCode()]) > 0) {
             return $this->json(['error' => 'Course already exists'], 409);
         }
 
-        $courseRepository->add(Course::fromDto($newCourse), true);
+        $newCourse = Course::fromDto($newCourse);
+
+        $course->setCode($newCourse->getCode());
+        $course->setName($newCourse->getName());
+        $course->setType($newCourse->getType());
+        $course->setPrice($newCourse->getPrice());
+
+        $courseRepository->add($course, true);
 
         return $this->json(['success' => true]);
+    }
+
+    private function isPricePresented(CourseDto $courseDto): bool
+    {
+        if ($courseDto->getType() !== CourseType::NAMES[CourseType::FREE]) {
+            return $courseDto->getPrice() > 0.0;
+        }
+        return true;
     }
 
     /**

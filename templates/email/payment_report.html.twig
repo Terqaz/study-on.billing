@@ -1,0 +1,41 @@
+{% extends 'email.html.twig' %}
+
+{% block css %}
+    <style>
+        th + th {
+            margin-left: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    <p>Отчет об оплаченных курсах за период {{ period['from']|date('d.m.Y') }} - {{ period['to']|date('d.m.Y') }}</p>
+{% endblock %}
+
+{% block body %}
+    <table class="table table-light table__report_info">
+        <thead>
+        <tr>
+            <th>Название курса</th>
+            <th>Тип курса</th>
+            <th>Число аренд/покупок</th>
+            <th>Общая сумма</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for course in courses %}
+            <tr>
+                <td>{{ course['name'] }}</td>
+                <td>{{ course['type'] }}</td>
+                <td>{{ course['transactions_count'] }}</td>
+                <td>{{ course['course_amount'] }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="6">Нет информации об оплате курсов</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <p>Итого: {{ total_paid }}</p>
+{% endblock %}

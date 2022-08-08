@@ -25,7 +25,7 @@ class CourseDto
      * @OA\Property(type="string")
      * @Serializer\Groups({"info", "new_edit"})
      * @Assert\NotNull(groups={"new_edit"})
-     * @Assert\Choice(CourseType::NAMES)
+     * @Assert\Choice(choices=CourseType::NAMES, groups={"new_edit"})
      */
     private string $type;
 
@@ -33,17 +33,6 @@ class CourseDto
      * @Serializer\Groups({"info", "new_edit"})
      */
     private float $price = 0.0;
-
-    /**
-     * @Assert\IsTrue(groups={"new_edit"}, message="Price field required for course which type is not free")
-     */
-    public function isPricePresented()
-    {
-        if ($this->type !== CourseType::NAMES[CourseType::FREE]) {
-            return $this->price > 0.0;
-        }
-        return true;
-    }
 
     /**
      * @return string
