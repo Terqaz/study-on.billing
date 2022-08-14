@@ -10,7 +10,7 @@ jobs:
             - uses: actions/checkout@v3
             - name: Setting test environment 1
               run: |
-                  echo "DATABASE_URL=pgsql://pguser:pguser@study-on_postgres_2:5432/study_on" >> .env.test.local
+                  echo "DATABASE_URL=pgsql://pguser:pguser@study-on_postgres_2:5432/study_on" >> .env.local
             - name: Install composer
               run: composer install
             - name: Show files
@@ -22,6 +22,7 @@ jobs:
                   docker ps -a
             - name: Setting test environment 2
               run: |
+                  echo "DATABASE_URL=pgsql://pguser:pguser@study-on_postgres_2:5432/study_on" >> .env.test.local
                   echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env.test.local
                   echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env.test.local
                   echo "MAILER_DSN=smtp://mailhog:1025" >> .env.test.local
