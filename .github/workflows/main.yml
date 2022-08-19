@@ -8,9 +8,11 @@ jobs:
         runs-on: ubuntu-20.04
         steps:
             - uses: actions/checkout@v3
-            - name: Setting test environment 1
+            - name: Setting local environment
               run: |
                   echo "DATABASE_URL=pgsql://pguser:pguser@study-on_postgres_2:5432/study_on" >> .env.local
+                  echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env.test.local
+                  echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env.test.local
             - name: Install composer
               run: composer install
             - name: Show files
@@ -20,14 +22,14 @@ jobs:
                   docker-compose build
                   docker-compose up -d
                   docker ps -a
-            - name: Setting test environment 2
+            - name: Setting JWT
+              run: |
+                  php bin/console lexik:jwt:generate-keypair
+            - name: Setting local test environment
               run: |
                   echo "DATABASE_URL=pgsql://pguser:pguser@study-on_postgres_2:5432/study_on" >> .env.test.local
-                  echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env.test.local
-                  echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env.test.local
                   echo "MAILER_DSN=smtp://mailhog:1025" >> .env.test.local
                   echo "ADMIN_EMAIL=adminCompany@mail.ru" >> .env.test.local
-                  php bin/console lexik:jwt:generate-keypair
                   ls -la
             - name: Create test DB and run
               run: |

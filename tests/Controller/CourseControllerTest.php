@@ -87,13 +87,13 @@ class CourseControllerTest extends AbstractTest
         // Нет кода
         $this->subtestPost($client, '/api/v1/courses', 400, [
             "name" => "Новый курс",
-            "type" => CourseType::NAMES[CourseType::RENT],
+            "type" => CourseType::RENT_NAME,
             "price" => "200"
         ]);
         // Нет имени
         $this->subtestPost($client, '/api/v1/courses', 400, [
             "code" => "new-course-1",
-            "type" => CourseType::NAMES[CourseType::RENT],
+            "type" => CourseType::RENT_NAME,
             "price" => "200"
         ]);
         // Нет типа
@@ -113,12 +113,12 @@ class CourseControllerTest extends AbstractTest
         $this->subtestPost($client, '/api/v1/courses', 400, [
             "code" => "new-course-1",
             "name" => "Новый курс",
-            "type" => CourseType::NAMES[CourseType::RENT],
+            "type" => CourseType::RENT_NAME,
         ]);
         $this->subtestPost($client, '/api/v1/courses', 400, [
             "code" => "new-course-1",
             "name" => "Новый курс",
-            "type" => CourseType::NAMES[CourseType::BUY],
+            "type" => CourseType::BUY_NAME,
         ]);
         // Курс с таким кодом уже существует
         $this->subtestPost($client, '/api/v1/courses', 409, [
