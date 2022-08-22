@@ -11,8 +11,9 @@ jobs:
             - name: Setting local environment
               run: |
                   echo "DATABASE_URL=pgsql://pguser:pguser@study-on_postgres_2:5432/study_on" >> .env.local
-                  echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env.test.local
-                  echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env.test.local
+                  echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env.local
+                  echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env.local
+                  echo "JWT_PASSPHRASE=1234" >> .env.local
             - name: Install composer
               run: composer install
             - name: Show files
